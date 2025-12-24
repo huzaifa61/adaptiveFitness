@@ -11,7 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -26,6 +26,7 @@ import { getDirectFAQAnswer, getSuggestedQuestions, enrichPromptWithFAQ } from '
 
 export default function ChatScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const scrollViewRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -34,10 +35,16 @@ export default function ChatScreen() {
   const [coins, setCoins] = useState(0);
   const [showCoinAnimation, setShowCoinAnimation] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'new' | 'view' | 'continue'>('new');
 
   useEffect(() => {
-    initializeChat();
-  }, []);
+    // Check if loading a past chat
+    if (params.chatId && params.mode) {
+      loadPastChat(params.chatId as string, params.mode as string);
+    } else {
+      initializeChat();
+    }
+  }, [params]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -72,6 +79,39 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('Error initializing chat:', error);
       Alert.alert('Error', 'Failed to initialize chat');
+    }
+  };
+
+  const loadPastChat = async (chatId: string, mode: string) => {
+    try {
+      setIsLoading(true);
+      const storedUserId = await AsyncStorage.getItem('userId');
+      
+      if (!storedUserId) {
+        Alert.alert('Error', 'User not found');
+        router.replace('/');
+        return;
+      }
+
+      setUserId(storedUserId);
+
+      // Fetch specific chat from backend
+      const chat = await apiService.getSpecificChat(storedUserId, chatId);
+      
+      if (chat && chat.messages) {
+        setMessages(chat.messages);
+        setViewMode(mode === 'continue' ? 'continue' : 'view');
+      }
+
+      // Fetch user coins
+      const userCoins = await apiService.getUserCoins(storedUserId);
+      setCoins(userCoins);
+    } catch (error) {
+      console.error('Error loading past chat:', error);
+      Alert.alert('Error', 'Failed to load chat. Starting new conversation.');
+      initializeChat();
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -164,6 +204,24 @@ export default function ChatScreen() {
         onComplete={() => setShowCoinAnimation(false)} 
       />
       
+      {viewMode === 'view' && (
+        <ThemedView style={styles.viewModeBanner}>
+          <View style={styles.viewModeBannerContent}>
+            <ThemedText style={styles.viewModeText}>
+              📖 Viewing past conversation
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={() => setViewMode('continue')}
+            >
+              <ThemedText style={styles.continueButtonText}>
+                Continue Chat
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+        </ThemedView>
+      )}
+      
       <ThemedView style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ThemedText style={styles.backButtonText}>←</ThemedText>
@@ -238,18 +296,25 @@ export default function ChatScreen() {
       <ThemedView style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Ask about fitness, workouts, or wellness..."
+          placeholder={
+            viewMode === 'view' 
+              ? "Viewing past conversation..." 
+              : "Ask about fitness, workouts, or wellness..."
+          }
           placeholderTextColor="#999"
           value={inputText}
           onChangeText={setInputText}
           multiline
           maxLength={500}
-          editable={!isLoading}
+          editable={viewMode !== 'view' && !isLoading}
         />
         <TouchableOpacity
-          style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton, 
+            (viewMode === 'view' || !inputText.trim() || isLoading) && styles.sendButtonDisabled
+          ]}
           onPress={() => handleSendMessage()}
-          disabled={!inputText.trim() || isLoading}
+          disabled={viewMode === 'view' || !inputText.trim() || isLoading}
         >
           <ThemedText style={styles.sendButtonText}>Send</ThemedText>
         </TouchableOpacity>
@@ -261,6 +326,35 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  viewModeBanner: {
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#4ECDC4',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 60,
+  },
+  viewModeBannerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  viewModeText: {
+    fontSize: 14,
+    color: '#4ECDC4',
+    fontWeight: '600',
+  },
+  continueButton: {
+    backgroundColor: '#4ECDC4',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',

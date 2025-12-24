@@ -191,6 +191,24 @@ app.get('/api/chat/:userId', async (req, res) => {
   }
 });
 
+// Get specific chat by ID
+app.get('/api/chat/:userId/:chatId', async (req, res) => {
+  try {
+    const { userId, chatId } = req.params;
+
+    const chat = await Chat.findOne({ userId, _id: chatId });
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    res.json({ chat });
+  } catch (error) {
+    console.error('Error fetching specific chat:', error);
+    res.status(500).json({ error: 'Failed to fetch chat' });
+  }
+});
+
 // Get user coins
 app.get('/api/users/:userId/coins', async (req, res) => {
   try {

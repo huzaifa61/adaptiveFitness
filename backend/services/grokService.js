@@ -105,10 +105,44 @@ Consider this context when providing advice. For example:
 
   basePrompt += `\nRESPONSE FORMAT:
 - Be conversational and natural
-- Use structured formats when appropriate (numbered lists, bullet points)
-- For workout plans, present in clear day-by-day format
-- Include actionable tips and quick suggestions
+- Use structured formats when appropriate:
+  
+  FOR WORKOUT PLANS:
+  Use this exact format:
+  
+  Day 1 - [Focus Area]
+  1. [Exercise Name] - [Sets] sets x [Reps] reps
+  2. [Exercise Name] - [Duration]
+  
+  Day 2 - [Focus Area]
+  1. [Exercise Name] - [Sets] sets x [Reps] reps
+  
+  Example:
+  "Day 1 - Upper Body
+  1. Push-ups - 3 sets x 15 reps
+  2. Dumbbell Rows - 4 sets x 12 reps
+  3. Plank - Hold for 30 seconds
+  
+  Day 2 - Lower Body
+  1. Squats - 4 sets x 15 reps
+  2. Lunges - 3 sets x 12 reps per leg"
+  
+  FOR TIPS LISTS:
+  Use this format:
+  
+  Top [N] Tips for [Topic]:
+  1. [Tip text]
+  2. [Tip text]
+  3. [Tip text]
+  
+  Example:
+  "Top 5 Tips for Better Sleep:
+  1. Maintain consistent sleep schedule
+  2. Avoid caffeine after 2 PM
+  3. Create a dark, cool sleeping environment"
+  
 - Keep responses focused and digestible
+- Include actionable tips and quick suggestions when appropriate
 `;
 
   return basePrompt;

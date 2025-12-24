@@ -101,6 +101,22 @@ class ApiService {
     }
   }
 
+  async getSpecificChat(userId: string, chatId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/${userId}/${chatId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch specific chat');
+      }
+
+      const data = await response.json();
+      return data.chat;
+    } catch (error) {
+      console.error('Error fetching specific chat:', error);
+      throw error;
+    }
+  }
+
   async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${API_BASE_URL}/health`);

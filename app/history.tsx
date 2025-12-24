@@ -126,15 +126,7 @@ export default function HistoryScreen() {
               {chatHistory.length} conversation{chatHistory.length !== 1 ? 's' : ''}
             </ThemedText>
             {chatHistory.map((chat, index) => (
-              <TouchableOpacity
-                key={chat._id || index}
-                style={styles.chatCard}
-                onPress={() => {
-                  // Future: Navigate to specific chat
-                  Alert.alert('Chat Preview', getFirstUserMessage(chat));
-                }}
-                activeOpacity={0.7}
-              >
+              <View key={chat._id || index} style={styles.chatCard}>
                 <View style={styles.chatCardHeader}>
                   <ThemedText style={styles.chatDate}>
                     {formatDate(chat.updatedAt || chat.createdAt)}
@@ -148,10 +140,42 @@ export default function HistoryScreen() {
                 <ThemedText style={styles.chatPreview} numberOfLines={2}>
                   {getFirstUserMessage(chat)}
                 </ThemedText>
-                <View style={styles.chatCardFooter}>
-                  <ThemedText style={styles.viewButton}>View →</ThemedText>
+                <View style={styles.chatCardActions}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => {
+                      router.push({
+                        pathname: '/chat',
+                        params: { 
+                          chatId: chat._id,
+                          mode: 'view'
+                        }
+                      });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={styles.actionButtonText}>📖 View</ThemedText>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.actionButtonPrimary]}
+                    onPress={() => {
+                      router.push({
+                        pathname: '/chat',
+                        params: { 
+                          chatId: chat._id,
+                          mode: 'continue'
+                        }
+                      });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText style={styles.actionButtonTextPrimary}>
+                      💬 Continue
+                    </ThemedText>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))}
           </>
         )}
@@ -235,13 +259,33 @@ const styles = StyleSheet.create({
   chatPreview: {
     fontSize: 15,
     lineHeight: 22,
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  chatCardFooter: {
-    alignItems: 'flex-end',
+  chatCardActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  viewButton: {
+  actionButton: {
+    flex: 1,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    borderWidth: 1,
+    borderColor: '#4ECDC4',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionButtonPrimary: {
+    backgroundColor: '#4ECDC4',
+    borderColor: '#4ECDC4',
+  },
+  actionButtonText: {
     color: '#4ECDC4',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  actionButtonTextPrimary: {
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },
