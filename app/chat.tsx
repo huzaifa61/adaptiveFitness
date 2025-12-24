@@ -36,20 +36,27 @@ export default function ChatScreen() {
   const [showCoinAnimation, setShowCoinAnimation] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'new' | 'view' | 'continue'>('new');
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Check if loading a past chat
-    if (params.chatId && params.mode) {
-      loadPastChat(params.chatId as string, params.mode as string);
-    } else {
-      initializeChat();
+    // Only initialize once
+    if (!initialized) {
+      // Check if loading a past chat
+      if (params.chatId && params.mode) {
+        loadPastChat(params.chatId as string, params.mode as string);
+      } else {
+        initializeChat();
+      }
+      setInitialized(true);
     }
-  }, [params]);
+  }, [initialized]); // Remove params from dependency array
 
   useEffect(() => {
     // Scroll to bottom when messages change
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages, isLoading]);
+    if (messages.length > 0) {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [messages.length]); // Only depend on message count, not messages array
 
   const initializeChat = async () => {
     try {

@@ -3,6 +3,21 @@ import { PersonalityType, ChatResponse, LifestyleData, User } from '@/types';
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 class ApiService {
+  private requestCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 5000; // 5 seconds cache
+
+  private getCachedData(key: string): any | null {
+    const cached = this.requestCache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData(key: string, data: any): void {
+    this.requestCache.set(key, { data, timestamp: Date.now() });
+  }
+
   async createUser(userId: string, personality: PersonalityType): Promise<User> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users`, {
@@ -62,6 +77,10 @@ class ApiService {
       }
 
       const data = await response.json();
+      
+      // Invalidate coins cache since it's updated
+      this.requestCache.delete(`coins:${userId}`);
+      
       return data;
     } catch (error) {
       console.error('Error sending chat message:', error);
@@ -86,6 +105,12 @@ class ApiService {
   }
 
   async getUserCoins(userId: string): Promise<number> {
+    const cacheKey = `coins:${userId}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${userId}/coins`);
 
@@ -94,6 +119,7 @@ class ApiService {
       }
 
       const data = await response.json();
+      this.setCachedData(cacheKey, data.coins);
       return data.coins;
     } catch (error) {
       console.error('Error fetching coins:', error);
